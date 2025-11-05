@@ -1,0 +1,10 @@
+[package]
+name = "rtorrenty"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+transmission-client = "0.1.6"
+url = "2.5.7"
+tokio = { version = "1", features = ["full"] }
+base64 = "0.21"
