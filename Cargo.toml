@@ -2,9 +2,24 @@
 name = "rtorrenty"
 version = "0.1.0"
 edition = "2024"
+description = "A simple torrent client with minimal functions for your terminal."
+repository = "https://github.com/sponkurtus2/rtorrenty"
+authors = ["Carlinux <sponkutus098@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["system", "cli"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 transmission-client = "0.1.6"
 url = "2.5.7"
 tokio = { version = "1", features = ["full"] }
 base64 = "0.21"
+clap = { version = "4.5.51", features = ["derive"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

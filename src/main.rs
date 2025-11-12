@@ -1,35 +1,41 @@
+mod rtorrenty_cli;
+
 use std::fs;
 use std::path::Path;
 
 use base64::{Engine as _, engine::general_purpose};
+use clap::Parser;
+use rtorrenty_cli::Args;
 use url::{ParseError, Url};
 
 use transmission_client::{Client, Torrent};
 
 #[tokio::main]
 async fn main() {
-    let torrent_file_location = Path::new("../testTorrent/debian-13.1.0-amd64-netinst.iso.torrent");
-    let download_dir = "/home/sponk2/Downloads/"; // Set def download dir in the tui
-
-    let client = match initialize_torrent_client() {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error when initializing the client -> {}", e);
-            return;
-        }
-    };
-
-    let decoded_torrent_file = decode_torrent_file(&torrent_file_location);
-
-    match add_torrent_download(&client, &download_dir, decoded_torrent_file).await {
-        Ok(torrent) => {
-            println!("Torrent started to download!");
-            println!("Torrent name: {}", torrent.name);
-        }
-        Err(e) => {
-            eprintln!("Error when starting to download torrent: {:?}", e);
-        }
-    }
+    let args = Args::try_parse();
+    println!("{:?}", args.)
+    // let torrent_file_location = Path::new("../testTorrent/debian-13.1.0-amd64-netinst.iso.torrent");
+    // let download_dir = "/home/sponk2/Downloads/"; // Set def download dir in the tui
+    //
+    // let client = match initialize_torrent_client() {
+    //     Ok(c) => c,
+    //     Err(e) => {
+    //         eprintln!("Error when initializing the client -> {}", e);
+    //         return;
+    //     }
+    // };
+    //
+    // let decoded_torrent_file = decode_torrent_file(&torrent_file_location);
+    //
+    // match add_torrent_download(&client, &download_dir, decoded_torrent_file).await {
+    //     Ok(torrent) => {
+    //         println!("Torrent started to download!");
+    //         println!("Torrent name: {}", torrent.name);
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error when starting to download torrent: {:?}", e);
+    //     }
+    // }
 }
 
 fn decode_torrent_file(torrent_location: &Path) -> String {
