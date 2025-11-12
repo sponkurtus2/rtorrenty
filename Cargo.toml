@@ -16,6 +16,8 @@ url = "2.5.7"
 tokio = { version = "1", features = ["full"] }
 base64 = "0.21"
 clap = { version = "4.5.51", features = ["derive"] }
+config-file = { version = "0.2.3" }
+serde = { version = "1.0.228", features = ["derive"] }
 
 [profile.release]
 strip = true
