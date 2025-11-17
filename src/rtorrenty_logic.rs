@@ -1,12 +1,11 @@
-use std::fs;
-use std::path::Path;
 use base64::Engine;
 use base64::engine::general_purpose;
+use config_file::FromConfigFile;
+use serde::Deserialize;
+use std::fs;
+use std::path::Path;
 use transmission_client::{Client, Torrent};
 use url::{ParseError, Url};
-use serde::Deserialize;
-use config_file::FromConfigFile;
-
 
 #[derive(Deserialize)]
 struct Config {
@@ -58,8 +57,8 @@ pub async fn add_torrent_download(
 
 fn read_download_dir_from_config() -> String {
     // Use a variable to find the global config file.
-    let config = Config::from_config_file("./config.toml").unwrap();
-    println!("{}" , config.download_dir);
+    let config = Config::from_config_file("/home/sponk2/rtorrenty/config.toml").unwrap();
+    println!("{}", config.download_dir);
     config.download_dir.to_string()
 }
 
