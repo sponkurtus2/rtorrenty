@@ -1,16 +1,17 @@
 use base64::Engine;
 use base64::engine::general_purpose;
-use config_file::FromConfigFile;
-use serde::Deserialize;
-use std::fs;
+use core::error;
+use std::os;
+use tokio::time;
+
 use std::path::Path;
+use std::{fs, time::Duration};
 use transmission_client::{Client, Torrent};
 use url::{ParseError, Url};
 
-#[derive(Deserialize)]
-struct Config {
-    download_dir: String,
-}
+use crate::helpers::read_download_dir_from_config;
+
+const DOWNLOADING: i32 = 4;
 
 pub fn decode_torrent_file(torrent_location: &Path) -> String {
     let torrent_bytes = fs::read(torrent_location)
@@ -49,17 +50,74 @@ pub async fn add_torrent_download(
     let torrent_ids = vec![added_torrent.hash_string.clone()];
 
     client
-        .torrent_set_location(Some(torrent_ids), read_download_dir_from_config(), true)
+        .torrent_set_location(
+            Some(torrent_ids.clone()),
+            read_download_dir_from_config(),
+            true,
+        )
         .await?;
+
+    start_torrent_download(client, torrent_ids).await?;
+    show_single_download(&client, added_torrent.id).await?;
 
     Ok(added_torrent)
 }
 
-fn read_download_dir_from_config() -> String {
-    // Use a variable to find the global config file.
-    let config = Config::from_config_file("/home/sponk2/rtorrenty/config.toml").unwrap();
-    println!("{}", config.download_dir);
-    config.download_dir.to_string()
+pub async fn start_torrent_download(
+    client: &Client,
+    torrent_id: Vec<String>,
+) -> Result<(), Box<dyn error::Error>> {
+    match client.torrent_start(Some(torrent_id), true).await {
+        Ok(()) => Ok(()),
+        Err(e) => return Err(format!("Error starting torrent download: {:?}", e).into()),
+    }
+}
+
+pub async fn show_single_download(
+    client: &Client,
+    torrent_id: i32,
+) -> Result<(), Box<dyn error::Error>> {
+    'check_is_downloading: loop {
+        let torrent = client.torrents(Some(vec![torrent_id])).await?;
+
+        for t in &torrent {
+            if t.status == DOWNLOADING && t.total_size != 0 {
+                println!(
+                    "Downloading -> {}\n file total size (MB) -> {}",
+                    t.name,
+                    t.total_size / 1048576
+                );
+                break 'check_is_downloading;
+            }
+        }
+        time::sleep(Duration::from_secs_f32(1.5));
+    }
+    Ok(())
+}
+
+pub async fn show_downloads(client: &Client) -> Result<(), Box<dyn error::Error>> {
+    loop {
+        let torrents = client.torrents(None).await?;
+        let mut has_downloading = false;
+        for torrent in &torrents {
+            // 4 : Downloading | 0 :Not yet
+            if torrent.status == DOWNLOADING {
+                println!(
+                    "Downloading torrent: {} \n {} \n {} \n {}",
+                    torrent.name,
+                    torrent.id,
+                    torrent.percent_done * 100.00,
+                    torrent.rate_download
+                );
+                has_downloading = true;
+            }
+            if has_downloading == true {
+                break;
+                // Stop the program and just show all the torrents
+            }
+        }
+        time::sleep(Duration::from_secs_f64(3.0)).await;
+    }
 }
 
 // fn initialize_config_file() {}

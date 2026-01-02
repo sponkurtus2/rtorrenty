@@ -1,5 +1,6 @@
 mod rtorrenty_cli;
 mod rtorrenty_logic;
+mod helpers;
 
 use clap::Parser;
 use rtorrenty_cli::Args;
@@ -8,6 +9,6 @@ use rtorrenty_cli::Args;
 async fn main() -> Result<(), Box<dyn core::error::Error>> {
     let args = Args::parse();
     args.execute().await?;
-
+    
     Ok(())
 }

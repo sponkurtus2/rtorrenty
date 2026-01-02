@@ -11,14 +11,19 @@ use crate::rtorrenty_logic::initialize_torrent_client;
 pub struct Args {
     /// Name of the file to download
     #[arg(short, long, action)]
-    pub f_name: Option<String>,
+    pub file_name: Option<String>,
 
+    // pub ma: Option<String>
+
+    // [[TODO]]
     #[arg(long, help_heading = "Config", alias = "download-folder")]
     pub download_folder: bool,
 
+    // [[TODO]]
     #[arg(long, help_heading = "Config", alias = "list-downloading-files")]
     pub list_downloading_files: bool,
 
+    // [[TODO]]
     #[arg(long, help_heading = "Config", alias = "delete-file")]
     pub delete_file: bool, // Maybe an ID (Torrent ID),
 }
@@ -28,7 +33,7 @@ impl Args {
     pub async fn execute(self) -> Result<(), Box<dyn error::Error>> {
         // Flag to download a torrent file
         if let Some(file) = &self
-            .f_name
+            .file_name
             .as_ref()
             .and_then(|f| (!f.is_empty()).then_some(f))
         {
