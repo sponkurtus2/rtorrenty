@@ -57,6 +57,8 @@ impl Args {
                     return Err(format!("Error when starting to download torrent: {:?}", e).into());
                 }
             }
+
+            match delete_file().await {}
         }
         // Add more flags
         Ok(())
