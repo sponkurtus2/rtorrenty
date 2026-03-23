@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::rtorrenty_logic::add_torrent_download;
 use crate::rtorrenty_logic::decode_torrent_file;
 use crate::rtorrenty_logic::initialize_torrent_client;
+use crate::rtorrenty_logic::show_downloads;
 
 #[derive(Parser, Debug)]
 #[command(version, author = "Carlos Reyes", about, long_about = None)]
@@ -13,13 +14,10 @@ pub struct Args {
     #[arg(short, long, action)]
     pub file_name: Option<String>,
 
-    // pub ma: Option<String>
-
     // [[TODO]]
     #[arg(long, help_heading = "Config", alias = "download-folder")]
     pub download_folder: bool,
 
-    // [[TODO]]
     #[arg(long, help_heading = "Config", alias = "list-downloading-files")]
     pub list_downloading_files: bool,
 
@@ -57,10 +55,26 @@ impl Args {
                     return Err(format!("Error when starting to download torrent: {:?}", e).into());
                 }
             }
-
-            match delete_file().await {}
         }
+
         // Add more flags
+        if self.list_downloading_files {
+            let client = match initialize_torrent_client() {
+                Ok(c) => c,
+                Err(e) => {
+                    return Err(format!("Error on list files flag -> {}", e).into());
+                }
+            };
+            match show_downloads(&client).await {
+                Ok(_) => {
+                    println!("Showing downloading files.");
+                }
+                Err(e) => {
+                    return Err(format!("Error showing downloading files -> {}", e).into());
+                }
+            }
+        }
+
         Ok(())
     }
 }

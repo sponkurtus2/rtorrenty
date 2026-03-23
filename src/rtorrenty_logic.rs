@@ -1,7 +1,8 @@
 use base64::Engine;
 use base64::engine::general_purpose;
+use comfy_table::presets::UTF8_FULL_CONDENSED;
+use comfy_table::{Cell, Color, Table};
 use core::error;
-use std::os;
 use tokio::time;
 
 use std::path::Path;
@@ -90,7 +91,7 @@ pub async fn show_single_download(
                 break 'check_is_downloading;
             }
         }
-        time::sleep(Duration::from_secs_f32(1.5));
+        time::sleep(Duration::from_secs_f32(1.5)).await;
     }
     Ok(())
 }
@@ -99,24 +100,44 @@ pub async fn show_downloads(client: &Client) -> Result<(), Box<dyn error::Error>
     loop {
         let torrents = client.torrents(None).await?;
         let mut has_downloading = false;
+
+        let mut table = Table::new();
+        table.load_preset(UTF8_FULL_CONDENSED);
+        table.set_header(vec![
+            Cell::new("ID")
+                .add_attribute(comfy_table::Attribute::Bold)
+                .fg(Color::DarkYellow),
+            Cell::new("Nombre").add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Progreso (%)").add_attribute(comfy_table::Attribute::Bold),
+            Cell::new("Velocidad").add_attribute(comfy_table::Attribute::Bold),
+        ]);
+
         for torrent in &torrents {
             // 4 : Downloading | 0 :Not yet
             if torrent.status == DOWNLOADING {
-                println!(
-                    "Downloading torrent: {} \n {} \n {} \n {}",
-                    torrent.name,
-                    torrent.id,
-                    torrent.percent_done * 100.00,
-                    torrent.rate_download
-                );
                 has_downloading = true;
-            }
-            if has_downloading == true {
-                break;
-                // Stop the program and just show all the torrents
+
+                let progress = format!("{:.2}%", torrent.percent_done * 100.0);
+                let speed_mb = format!("{:.2} MB/s", torrent.rate_download as f64 / 1_048_576.0);
+
+                table.add_row(vec![
+                    Cell::new(&torrent.id.to_string()).fg(Color::DarkYellow),
+                    Cell::new(&torrent.name),
+                    Cell::new(&progress).fg(Color::DarkGreen), // Verde suave para el progreso
+                    Cell::new(&speed_mb).fg(Color::DarkCyan),
+                ]);
             }
         }
-        time::sleep(Duration::from_secs_f64(3.0)).await;
+
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+
+        if has_downloading {
+            println!("{table}");
+        } else {
+            break Ok(());
+        }
+
+        time::sleep(Duration::from_secs_f64(2.0)).await;
     }
 }
 
