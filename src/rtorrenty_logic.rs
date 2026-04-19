@@ -29,7 +29,6 @@ pub fn initialize_torrent_client() -> Result<Client, ParseError> {
 
     let client = Client::new(url);
 
-    // We will not use auth, since this is a very basic TUI.
     client.set_authentication(None);
 
     Ok(client)
@@ -93,6 +92,15 @@ pub async fn show_single_download(
         }
         time::sleep(Duration::from_secs_f32(1.5)).await;
     }
+    Ok(())
+}
+
+pub async fn delete_torrent(client: &Client, torrent_id: &u8) -> Result<(), Box<dyn error::Error>> {
+    match client.torrent_remove(torrent_id) {
+        Ok(()) => Ok(()),
+        Err(e) => return Err(format!("Error starting torrent download: {:?}", e).into()),
+    }
+
     Ok(())
 }
 

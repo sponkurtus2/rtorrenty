@@ -4,6 +4,7 @@ use std::path::Path;
 
 use crate::rtorrenty_logic::add_torrent_download;
 use crate::rtorrenty_logic::decode_torrent_file;
+use crate::rtorrenty_logic::delete_torrent;
 use crate::rtorrenty_logic::initialize_torrent_client;
 use crate::rtorrenty_logic::show_downloads;
 
@@ -18,17 +19,26 @@ pub struct Args {
     #[arg(long, help_heading = "Config", alias = "download-folder")]
     pub download_folder: bool,
 
+    /// Enter in a loop to print a table with your current downloads
     #[arg(long, help_heading = "Config", alias = "list-downloading-files")]
     pub list_downloading_files: bool,
 
-    // [[TODO]]
+    /// Use some torrent ID to delete it from your downloads
     #[arg(long, help_heading = "Config", alias = "delete-file")]
-    pub delete_file: bool, // Maybe an ID (Torrent ID),
+    pub delete_file: Option<u8>,
 }
 
 impl Args {
     #[expect(clippy::print_stdout, reason = "This is where we parse the command")]
     pub async fn execute(self) -> Result<(), Box<dyn error::Error>> {
+        // Initialize the client ONCE
+        let torrent_client = match initialize_torrent_client() {
+            Ok(c) => c,
+            Err(e) => {
+                return Err(format!("Error when initializing the client -> {}", e).into());
+            }
+        };
+
         // Flag to download a torrent file
         if let Some(file) = &self
             .file_name
@@ -40,14 +50,7 @@ impl Args {
             let torrent_file_location: &Path = Path::new(file);
             let decoded_torrent_file = decode_torrent_file(torrent_file_location);
 
-            let client = match initialize_torrent_client() {
-                Ok(c) => c,
-                Err(e) => {
-                    return Err(format!("Error when initializing the client -> {}", e).into());
-                }
-            };
-
-            match add_torrent_download(&client, decoded_torrent_file).await {
+            match add_torrent_download(&torrent_client, decoded_torrent_file).await {
                 Ok(_) => {
                     println!("Downloading torrent");
                 }
@@ -59,18 +62,26 @@ impl Args {
 
         // Add more flags
         if self.list_downloading_files {
-            let client = match initialize_torrent_client() {
-                Ok(c) => c,
-                Err(e) => {
-                    return Err(format!("Error on list files flag -> {}", e).into());
-                }
-            };
-            match show_downloads(&client).await {
+            match show_downloads(&torrent_client).await {
                 Ok(_) => {
                     println!("Showing downloading files.");
                 }
                 Err(e) => {
                     return Err(format!("Error showing downloading files -> {}", e).into());
+                }
+            }
+        }
+
+        if let Some(torrent_id) = &self
+            .delete_file
+            .as_ref()
+        {
+            match delete_torrent(&torrent_client, torrent_id).await {
+                Ok(_) => {
+                    println!("Deleting torrent...");
+                }
+                Err(e) => {
+                    return Err(format!("Error deleting torrent -> {}", e).into());
                 }
             }
         }
